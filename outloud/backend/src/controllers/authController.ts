@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 import { supabase } from '../services/supabase';
 import { AppError } from '../middleware/errorHandler';
 import { User, JWTPayload } from '../types';
@@ -11,6 +11,10 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 // Helper: Generate JWT token
 const generateToken = (payload: JWTPayload): string => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+};
+
+const generateRandomId = () => {
+  return randomBytes(4).toString('hex'); // 8 character hex string
 };
 
 // Helper: Format user response (remove password_hash)
@@ -127,7 +131,7 @@ export const createGuestUser = async (
 ) => {
   try {
     // Create guest user with random username
-    const guestUsername = `guest_${uuidv4().slice(0, 8)}`;
+    const guestUsername = `guest_${generateRandomId().slice(0, 8)}`;
 
     const { data: guestUser, error } = await supabase
       .from('users')

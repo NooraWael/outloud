@@ -26,3 +26,5 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Outloud Backend running on port ${PORT}`);
 });
+
+export default app;
