@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { colors } from '@/styles/neumorphic';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -79,7 +80,7 @@ function RootLayoutNav() {
           }} 
         />
       </Stack>
-      <StatusBar style="dark" />
+      <StatusBar style="light" backgroundColor={colors.backgroundSecondary} />
     </QueryClientProvider>
   );
 }

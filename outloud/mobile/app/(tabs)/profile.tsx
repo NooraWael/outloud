@@ -1,279 +1,324 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import GlassCard from '@/components/ui/NeumorphicCard';
+import { colors, typography } from '@/styles/neumorphic';
+
+const USER = {
+  name: 'Noora Wael',
+  handle: '@nooni.codes',
+  major: 'CS + HCI',
+  semesters: 'Fall 24 cohort',
+  conversations: 18,
+  studySpaces: 5,
+  uploads: 12,
+};
+
+const PROJECTS = [
+  {
+    id: 'os',
+    title: 'OS Exam – Deadlocks',
+    persona: 'Mentor pushback',
+    conversations: 8,
+    uploads: 3,
+    lastActive: '2 days ago',
+  },
+  {
+    id: 'ielts',
+    title: 'IELTS Speaking – Band 8',
+    persona: 'Coach energy',
+    conversations: 5,
+    uploads: 4,
+    lastActive: 'Yesterday',
+  },
+  {
+    id: 'pitch',
+    title: 'Hackathon Pitch',
+    persona: 'Critic sparring',
+    conversations: 3,
+    uploads: 5,
+    lastActive: '3 hours ago',
+  },
+];
+
+const MATERIALS = [
+  { id: '1', name: 'Deadlocks cheat sheet.pdf', project: 'OS Exam', size: '1.2 MB' },
+  { id: '2', name: 'IELTS follow-up prompts.docx', project: 'IELTS Speaking', size: '640 KB' },
+  { id: '3', name: 'Pitch storyboard.fig', project: 'Hackathon Pitch', size: '3.4 MB' },
+];
 
 export default function ProfileScreen() {
-  // TODO: Replace with actual user data
-  const user = {
-    username: 'demo_user',
-    isGuest: true,
-    conversationsCount: 0,
-  };
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
-      </View>
-
-      {/* User Info Card */}
-      <View style={styles.card}>
-        <View style={styles.avatarContainer}>
-          <Ionicons name="person" size={48} color="#4ECDC4" />
-        </View>
-        <Text style={styles.username}>{user.username}</Text>
-        {user.isGuest && (
-          <View style={styles.guestBadge}>
-            <Text style={styles.guestBadgeText}>Guest User</Text>
+    <SafeAreaView style={styles.safeArea} edges={[ 'left', 'right']}  >
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <GlassCard style={styles.heroCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarInitials}>
+              {USER.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+            </Text>
           </View>
-        )}
-      </View>
-
-      {/* Stats Card */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Your Progress</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.conversationsCount}</Text>
-            <Text style={styles.statLabel}>Conversations</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Topics Studied</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Avg Score</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Actions */}
-      {user.isGuest ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Save Your Progress</Text>
-          <Text style={styles.cardDescription}>
-            Create an account to save your conversations and track your learning progress.
+          <Text style={styles.name}>{USER.name}</Text>
+          <Text style={styles.handle}>{USER.handle}</Text>
+          <Text style={styles.meta}>
+            {USER.major} • {USER.semesters}
           </Text>
-          <Pressable
-            style={styles.buttonPrimary}
-            onPress={() => router.push('/(auth)/signup')}
-          >
-            <Text style={styles.buttonPrimaryText}>Create Account</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={styles.card}>
-          <MenuButton
-            icon="settings-outline"
-            label="Settings"
-            onPress={() => {}}
-          />
-          <MenuButton
-            icon="help-circle-outline"
-            label="Help & Support"
-            onPress={() => {}}
-          />
-          <MenuButton
-            icon="log-out-outline"
-            label="Logout"
-            onPress={() => {}}
-            danger
-          />
-        </View>
-      )}
 
-      {/* About */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Outloud v1.0.0</Text>
-        <Text style={styles.footerText}>Built for CS Girlies Hackathon</Text>
-      </View>
-    </ScrollView>
+          <View style={styles.statsRow}>
+            <StatBlock label="Conversations" value={USER.conversations} />
+            <StatBlock label="Study spaces" value={USER.studySpaces} />
+            <StatBlock label="Uploads" value={USER.uploads} />
+          </View>
+        </GlassCard>
+
+        <View style={styles.masteryCard}>
+          <View style={styles.masteryIcon}>
+            <Ionicons name="shield-checkmark-outline" size={28} color={colors.primary} />
+          </View>
+          <View style={styles.masteryText}>
+            <Text style={styles.masteryLabel}>Mastered topic</Text>
+            <Text style={styles.masteryTitle}>Deadlock protocols</Text>
+            <Text style={styles.masteryMeta}>Clarity score 92 • Retell streak ×4</Text>
+          </View>
+        </View>
+
+        <View>
+          <Text style={styles.sectionLabel}>Active projects</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.projectRow}
+          >
+            {PROJECTS.map((project) => (
+              <View key={project.id} style={styles.projectPill}>
+                <View style={styles.projectPillIcon}>
+                  <Ionicons name="mic-outline" size={18} color={colors.primary} />
+                </View>
+                <Text style={styles.projectPillTitle}>{project.title}</Text>
+                <Text style={styles.projectPillMeta}>
+                  {project.conversations} convos • {project.uploads} uploads
+                </Text>
+                <Text style={styles.projectPillPersona}>{project.persona}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        <Text style={styles.sectionLabel}>Recent material uploads</Text>
+        <GlassCard style={styles.materialCard}>
+          {MATERIALS.map((material, index) => (
+            <View key={material.id} style={styles.materialRow}>
+              <View style={styles.materialIcon}>
+                <Ionicons name="document-text-outline" size={18} color={colors.accent} />
+              </View>
+              <View style={styles.materialText}>
+                <Text style={styles.materialName}>{material.name}</Text>
+                <Text style={styles.materialProject}>
+                  {material.project} • {material.size}
+                </Text>
+              </View>
+              {index < MATERIALS.length - 1 && <View style={styles.materialDivider} />}
+            </View>
+          ))}
+        </GlassCard>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Outloud Beta • Make learning feel like a co-hosted podcast</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-// Reusable Menu Button Component
-function MenuButton({
-  icon,
-  label,
-  onPress,
-  danger = false,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  danger?: boolean;
-}) {
+function StatBlock({ label, value }: { label: string; value: number }) {
   return (
-    <Pressable style={styles.menuButton} onPress={onPress}>
-      <Ionicons
-        name={icon}
-        size={24}
-        color={danger ? '#FF6B6B' : '#7f8c8d'}
-      />
-      <Text style={[styles.menuButtonText, danger && styles.menuButtonTextDanger]}>
-        {label}
-      </Text>
-      <Ionicons name="chevron-forward" size={20} color="#7f8c8d" />
-    </Pressable>
+    <View style={styles.statBlock}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#e0e5ec',
+    backgroundColor: colors.background,
   },
   content: {
-    paddingBottom: 40,
+    paddingRight: 24,
+    paddingLeft: 24,
+    paddingBottom: 60,
+    gap: 20,
   },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+  heroCard: {
+    alignItems: 'center',
+    paddingVertical: 32,
   },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-
-  // Card
-  card: {
-    backgroundColor: '#e0e5ec',
-    borderRadius: 16,
-    padding: 24,
-    marginHorizontal: 24,
-    marginBottom: 16,
-    shadowColor: '#a3b1c6',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 12,
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-
-  // Avatar
-  avatarContainer: {
+  avatar: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#e0e5ec',
+    backgroundColor: colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
     marginBottom: 16,
-    shadowColor: '#a3b1c6',
-    shadowOffset: { width: 6, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 5,
   },
-  username: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  guestBadge: {
-    backgroundColor: '#FFE66D',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'center',
-  },
-  guestBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2c3e50',
-  },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
+  avatarInitials: {
+    ...typography.h2,
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#4ECDC4',
+  },
+  name: {
+    ...typography.h2,
+    fontSize: 26,
+  },
+  handle: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  meta: {
+    ...typography.body,
+    fontSize: 13,
+    marginBottom: 24,
+  },
+  statsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statBlock: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    ...typography.h2,
+    fontSize: 24,
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    textAlign: 'center',
+    ...typography.caption,
+    color: colors.textSecondary,
   },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#d1d9e6',
+  sectionLabel: {
+    ...typography.label,
+    marginTop: 4,
   },
-
-  // Buttons
-  buttonPrimary: {
-    backgroundColor: '#4ECDC4',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  buttonPrimaryText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
-  // Menu
-  menuButton: {
+  masteryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#d1d9e6',
+    borderRadius: 28,
+    backgroundColor: '#0b162c',
+    padding: 20,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
-  menuButtonText: {
+  masteryIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  masteryText: {
     flex: 1,
-    fontSize: 16,
-    color: '#2c3e50',
-    marginLeft: 12,
   },
-  menuButtonTextDanger: {
-    color: '#FF6B6B',
+  masteryLabel: {
+    ...typography.label,
+    marginBottom: 4,
   },
-
-  // Footer
+  masteryTitle: {
+    ...typography.h2,
+    fontSize: 22,
+  },
+  masteryMeta: {
+    ...typography.body,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  projectRow: {
+    gap: 12,
+    paddingVertical: 4,
+  },
+  projectPill: {
+    width: 220,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  projectPillIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: '#060d1b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  projectPillTitle: {
+    ...typography.h3,
+    marginBottom: 6,
+  },
+  projectPillMeta: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  projectPillPersona: {
+    ...typography.body,
+    fontSize: 13,
+  },
+  materialCard: {
+    gap: 12,
+    paddingVertical: 16,
+  },
+  materialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    position: 'relative',
+  },
+  materialIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  materialText: {
+    flex: 1,
+  },
+  materialName: {
+    ...typography.h3,
+    fontSize: 15,
+  },
+  materialProject: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  materialDivider: {
+    position: 'absolute',
+    bottom: 0,
+    left: 48,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.glassBorder,
+  },
   footer: {
     alignItems: 'center',
-    marginTop: 24,
     paddingHorizontal: 24,
   },
   footerText: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    marginBottom: 4,
+    ...typography.caption,
+    textAlign: 'center',
   },
 });

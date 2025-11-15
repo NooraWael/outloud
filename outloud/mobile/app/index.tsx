@@ -1,33 +1,32 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import Logo from '@/components/ui/Logo';
+import Button from '@/components/ui/Button';
+import { colors, typography } from '@/styles/neumorphic';
 
-export default function LandingPage() {
+export default function OnboardingPage() {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.emoji}>🎤</Text>
-        <Text style={styles.title}>Outloud</Text>
-        <Text style={styles.subtitle}>Learn by Talking Back</Text>
-        <Text style={styles.description}>
-          Have real conversations with AI mentors. Get instant feedback with color-coded heatmaps.
+      <Animated.View entering={FadeInDown.duration(600)} style={styles.hero}>
+        <View style={styles.heroGlow} />
+        <Logo size={84} style={styles.logo} />
+        <Text style={styles.title}>Explain it better by saying it aloud.</Text>
+
+        <View style={styles.buttonStack}>
+          <Button title="Start a conversation" onPress={() => router.push('/(tabs)')} />
+          <Button
+            title="I already have an account"
+            variant="secondary"
+            onPress={() => router.push('/(auth)/login')}
+          />
+        </View>
+
+        <Text style={styles.signupPrompt}>
+          Don’t have an account?
+          <Text style={styles.signupText}> Sign up</Text>
         </Text>
-      </View>
-      
-      <View style={styles.buttons}>
-        <Pressable 
-          style={styles.buttonPrimary}
-          onPress={() => router.push('/(tabs)')}
-        >
-          <Text style={styles.buttonPrimaryText}>Try Demo</Text>
-        </Pressable>
-        
-        <Pressable 
-          style={styles.buttonSecondary}
-          onPress={() => router.push('/(auth)/login')}
-        >
-          <Text style={styles.buttonSecondaryText}>Login</Text>
-        </Pressable>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -35,67 +34,53 @@ export default function LandingPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#e0e5ec',
-    padding: 24,
-    justifyContent: 'space-between',
-    paddingTop: 100,
-    paddingBottom: 50,
-  },
-  content: {
+    backgroundColor: colors.background,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  emoji: {
-    fontSize: 80,
-    marginBottom: 16,
+  hero: {
+    width: '100%',
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+    alignItems: 'center',
+    position: 'relative',
   },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 8,
+  heroGlow: {
+    position: 'absolute',
+    top: '20%',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(78, 205, 196, 0.12)',
+    opacity: 0.6,
+    alignSelf: 'center',
+    shadowColor: colors.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 30,
+    transform: [{ translateY: -30 }],
   },
-  subtitle: {
-    fontSize: 20,
-    color: '#7f8c8d',
+  logo: {
     marginBottom: 24,
   },
-  description: {
-    fontSize: 16,
-    color: '#7f8c8d',
+  title: {
+    ...typography.h1,
+    fontSize: 46,
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    marginBottom: 32,
   },
-  buttons: {
-    gap: 16,
+  buttonStack: {
+    width: '100%',
+    gap: 12,
   },
-  buttonPrimary: {
-    backgroundColor: '#4ECDC4',
-    padding: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+  signupPrompt: {
+    ...typography.caption,
+    fontSize: 14,
+    marginTop: 24,
+    textAlign: 'center',
+    color: colors.textSecondary,
   },
-  buttonPrimaryText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  buttonSecondary: {
-    backgroundColor: 'transparent',
-    padding: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4ECDC4',
-  },
-  buttonSecondaryText: {
-    color: '#4ECDC4',
-    fontSize: 18,
+  signupText: {
+    color: colors.text,
     fontWeight: '600',
   },
 });
