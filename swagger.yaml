@@ -1,0 +1,743 @@
+openapi: 3.0.3
+info:
+  title: Outloud API
+  version: 1.0.0
+  description: >
+    Outloud, Learn by Talking Back.
+
+    Voice-first conversational learning with mentor/peer personas, conversations,
+    evaluations, and heatmaps.
+
+servers:
+  - url: https://tbd
+    description: Local / Dev server - MIGHT HOST
+
+tags:
+  - name: Auth
+  - name: Projects
+  - name: Materials
+  - name: Conversations
+  - name: Messages
+  - name: Evaluations
+  - name: STT
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    AuthSignupRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          nullable: true
+        password:
+          type: string
+      required: [username, password]
+
+    AuthLoginRequest:
+      type: object
+      properties:
+        usernameOrEmail:
+          type: string
+        password:
+          type: string
+      required: [usernameOrEmail, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_pinned:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateProjectRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required: [title]
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_pinned:
+          type: boolean
+
+    Material:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        type:
+          type: string
+          description: pdf | image | text | url
+        source_path:
+          type: string
+          nullable: true
+        raw_text:
+          type: string
+          nullable: true
+        status:
+          type: string
+          description: pending | processed | failed
+        created_at:
+          type: string
+          format: date-time
+
+    CreateMaterialTextRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum: [text, url]
+        raw_text:
+          type: string
+          nullable: true
+        source_path:
+          type: string
+          nullable: true
+      required: [title, type]
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        mode:
+          type: string
+          description: mentor | peer | coach | critic
+        relationship:
+          type: string
+          description: mentor | study_buddy | coach | critic
+        status:
+          type: string
+          description: active | completed | archived
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateConversationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        mode:
+          type: string
+          enum: [mentor, peer, coach, critic]
+        relationship:
+          type: string
+          enum: [mentor, study_buddy, coach, critic]
+        materialId:
+          type: string
+          format: uuid
+          nullable: true
+      required: [mode, relationship]
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        sender:
+          type: string
+          enum: [user, ai]
+        text:
+          type: string
+        audio_url:
+          type: string
+          nullable: true
+          description: >
+            Optional URL to an audio file.
+            For AI messages, this can be a TTS rendering of the AI reply.
+        meta:
+          type: object
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    CreateMessageRequest:
+      type: object
+      properties:
+        sender:
+          type: string
+          enum: [user]
+        text:
+          type: string
+          description: Transcribed speech from the user
+        materialId:
+          type: string
+          format: uuid
+          nullable: true
+        requestEvaluation:
+          type: boolean
+          default: false
+        requestVoice:
+          type: boolean
+          default: false
+          description: If true, also generate an audio (TTS) version of the AI reply
+      required: [sender, text]
+
+    MentorReplyResponse:
+      type: object
+      properties:
+        userMessage:
+          $ref: '#/components/schemas/Message'
+        aiMessage:
+          $ref: '#/components/schemas/Message'
+
+    Scores:
+      type: object
+      properties:
+        coverage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        clarity:
+          type: integer
+          minimum: 0
+          maximum: 100
+        correctness:
+          type: integer
+          minimum: 0
+          maximum: 100
+        causality:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    HeatmapSegment:
+      type: object
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+        verdict:
+          type: string
+          description: supported | contradiction | vague | uncertain
+        note:
+          type: string
+
+    Evaluation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        material_id:
+          type: string
+          format: uuid
+          nullable: true
+        scope:
+          type: string
+          description: overall | chunk | segment
+        scores:
+          $ref: '#/components/schemas/Scores'
+        heatmap:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeatmapSegment'
+        summary:
+          type: string
+        next_try:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    EvaluateConversationRequest:
+      type: object
+      properties:
+        materialId:
+          type: string
+          format: uuid
+          nullable: true
+        scope:
+          type: string
+          enum: [overall, chunk, segment]
+          default: overall
+
+    EvaluateConversationResponse:
+      type: object
+      properties:
+        evaluation:
+          $ref: '#/components/schemas/Evaluation'
+
+    STTTranscribeResponse:
+      type: object
+      properties:
+        transcript:
+          type: string
+        words:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              start:
+                type: number
+              end:
+                type: number
+
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Sign up
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSignupRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List projects for current user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+    post:
+      tags: [Projects]
+      summary: Create project
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{projectId}:
+    patch:
+      tags: [Projects]
+      summary: Update project
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+    delete:
+      tags: [Projects]
+      summary: Delete project
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+  /projects/{projectId}/materials:
+    get:
+      tags: [Materials]
+      summary: List materials for a project
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Material'
+    post:
+      tags: [Materials]
+      summary: Create material (text/url or file)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  description: JSON string for CreateMaterialTextRequest if using text/url
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Material created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Material'
+
+  /materials/{materialId}:
+    get:
+      tags: [Materials]
+      summary: Get material
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: materialId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Material
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Material'
+
+  /projects/{projectId}/conversations:
+    get:
+      tags: [Conversations]
+      summary: List conversations for a project
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+    post:
+      tags: [Conversations]
+      summary: Create conversation for a project
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConversationRequest'
+      responses:
+        '201':
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+
+  /conversations/{conversationId}:
+    get:
+      tags: [Conversations]
+      summary: Get a conversation with messages and latest evaluation
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation:
+                    $ref: '#/components/schemas/Conversation'
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  latestEvaluation:
+                    $ref: '#/components/schemas/Evaluation'
+                    nullable: true
+
+  /conversations/{conversationId}/messages:
+    post:
+      tags: [Messages]
+      summary: Add a user message and get AI reply
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessageRequest'
+      responses:
+        '200':
+          description: User and AI messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MentorReplyResponse'
+
+  /conversations/{conversationId}/evaluate:
+    post:
+      tags: [Evaluations]
+      summary: Evaluate a conversation (scores + heatmap)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateConversationRequest'
+      responses:
+        '200':
+          description: Evaluation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluateConversationResponse'
+
+  /stt/transcribe:
+    post:
+      tags: [STT]
+      summary: Transcribe audio to text
+      description: >
+        Separate microservice for speech-to-text (e.g., faster-whisper).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                lang:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Transcript
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/STTTranscribeResponse'
