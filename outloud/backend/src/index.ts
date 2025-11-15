@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes';
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -17,9 +19,10 @@ app.get('/health', (req, res) => {
 });
 
 // Routes will go here -later
-// app.use('/auth', authRoutes);
+app.use('/auth', authRoutes);
 // app.use('/conversations', conversationRoutes);
 
+app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Outloud Backend running on port ${PORT}`);
 });
