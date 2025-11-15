@@ -1,13 +1,13 @@
 Outloud
 ===========
 
-### _Learn by Talking
+### Learn by Talking
 
 Outloud is a **voice-first learning companion** where you don’t just answer questions…
 
 You have a **real conversation**.
 
-You talk.The AI talks back — as a **mentor, peer, coach, or critic**.Together, you co-host a tiny “learning podcast” about your topic.
+You talk.The AI talks back as a **mentor, peer, coach, or critic**.Together, you co-host a tiny “learning podcast” about your topic.
 
 After the conversation, Outloud shows you **how clearly you explained things** with:
 
@@ -18,7 +18,7 @@ After the conversation, Outloud shows you **how clearly you explained things** w
 *   and a **20-second retell challenge** to instantly get better.
     
 
-🚀 Why Outloud?
+Why Outloud?
 ---------------
 
 Students don’t truly know something until they can **say it out loud** and defend it in a conversation.
