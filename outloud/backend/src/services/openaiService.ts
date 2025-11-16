@@ -62,7 +62,7 @@ export async function generateAIReply({
 export async function generateTTS(text: string): Promise<Buffer> {
   const mp3 = await openai.audio.speech.create({
     model: 'tts-1',
-    voice: 'alloy', // Options: alloy, echo, fable, onyx, nova, shimmer
+    voice: 'nova', // Options: alloy, echo, fable, onyx, nova, shimmer
     input: text,
   });
 

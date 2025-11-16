@@ -18,7 +18,7 @@ export default function OnboardingPage() {
           <Button
             title="I already have an account"
             variant="secondary"
-            onPress={() => router.push('/(auth)/login')}
+            onPress={() => router.push('/(tabs)')}
           />
         </View>
 
