@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import FormData from 'form-data';
 import { supabase } from '../services/supabase';
+import { generateAIReply, generateTTS } from '../services/openaiService';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 
@@ -15,16 +16,23 @@ export const sendVoiceMessage = async (
 ) => {
   try {
     const { id: conversationId } = req.params;
-    const audioFile = (req as any).file; // From multer middleware
+    const audioFile = (req as any).file;
 
     if (!audioFile) {
       throw new AppError('Audio file is required', 400);
     }
 
-    // 1. Get conversation details
+    // 1. Get conversation details with topic material
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
-      .select('*, demo_topics (*)')
+      .select(`
+        *,
+        demo_topics (
+          id,
+          title,
+          material_text
+        )
+      `)
       .eq('id', conversationId)
       .single();
 
@@ -60,6 +68,7 @@ export const sendVoiceMessage = async (
       formData,
       {
         headers: formData.getHeaders(),
+        timeout: 30000, // 30 second timeout
       }
     );
 
@@ -88,45 +97,74 @@ export const sendVoiceMessage = async (
       .from('messages')
       .select('sender, text')
       .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(10); // Last 10 messages for context
 
-    // 7. Generate AI response (TODO: Implement OpenAI call)
-    // For now, return a placeholder
-    const aiResponseText = `[AI ${conversation.persona} response to: "${transcript}"]`;
+    // 7. Generate AI response using OpenAI
+    const aiResponseText = await generateAIReply({
+      persona: conversation.persona,
+      userMessage: transcript,
+      conversationHistory: previousMessages || [],
+      materialText: conversation.demo_topics?.material_text,
+      topicTitle: conversation.demo_topics?.title || 'this topic',
+    });
 
-    // 8. Save AI message (without TTS for now)
+    // 8. Generate TTS for AI response
+    const ttsBuffer = await generateTTS(aiResponseText);
+    
+    const aiAudioPath = `ai_audio/${conversationId}/${Date.now()}.mp3`;
+    const { error: ttsUploadError } = await supabase.storage
+      .from('ai-audio')
+      .upload(aiAudioPath, ttsBuffer, {
+        contentType: 'audio/mpeg',
+      });
+
+    if (ttsUploadError) throw ttsUploadError;
+
+    const { data: aiAudioUrl } = supabase.storage
+      .from('ai-audio')
+      .getPublicUrl(aiAudioPath);
+
+    // 9. Save AI message
     const { data: aiMessage, error: aiMsgError } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversationId,
         sender: 'ai',
         text: aiResponseText,
-        audio_url: null, // TODO: Generate TTS
+        audio_url: aiAudioUrl.publicUrl,
       })
       .select()
       .single();
 
     if (aiMsgError) throw aiMsgError;
 
-    // 9. Update conversation turn count
+    // 10. Update conversation turn count
+    const newTurnCount = conversation.turn_count + 1;
     const { error: updateError } = await supabase
       .from('conversations')
       .update({
-        turn_count: conversation.turn_count + 1,
+        turn_count: newTurnCount,
         updated_at: new Date().toISOString(),
       })
       .eq('id', conversationId);
 
     if (updateError) throw updateError;
 
-    // 10. Return both messages
+    // 11. Return both messages
     res.json({
       userMessage,
       aiMessage,
-      turn_count: conversation.turn_count + 1,
-      can_continue: conversation.turn_count + 1 < 3,
+      turn_count: newTurnCount,
+      can_continue: newTurnCount < 3,
     });
   } catch (error) {
+    // Handle specific errors
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        return next(new AppError('STT service is unavailable', 503));
+      }
+    }
     next(error);
   }
 };

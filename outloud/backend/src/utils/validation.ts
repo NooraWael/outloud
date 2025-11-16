@@ -24,6 +24,6 @@ export const schemas = {
   }),
   createConversation: Joi.object({
     topic_id: Joi.string().uuid().required(),
-    persona: Joi.string().valid('mentor', 'critic').required(),
+     persona: Joi.string().valid('mentor', 'critic', 'buddy', 'coach').required(),
   }),
 };

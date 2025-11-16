@@ -12,7 +12,7 @@ export interface DemoTopic {
   id: string;
   title: string;
   description: string;
-  persona: 'mentor' | 'critic';
+  persona: 'mentor' | 'critic' | 'buddy' | 'coach'; 
   material_text: string;
   created_at: string;
 }
@@ -22,7 +22,7 @@ export interface Conversation {
   id: string;
   user_id: string | null;
   topic_id: string;
-  persona: 'mentor' | 'critic';
+  persona: 'mentor' | 'critic' | 'buddy' | 'coach'; 
   turn_count: number;
   status: 'active' | 'evaluated';
   created_at: string;
