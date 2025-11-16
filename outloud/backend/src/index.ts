@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import demoRoutes from './routes/demoRoutes';
 import conversationRoutes from './routes/conversationRoutes';
+import evaluationRoutes from './routes/evaluationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/demo', demoRoutes); 
 app.use('/conversations', conversationRoutes);
+app.use('/conversations', evaluationRoutes);
 
 app.use(errorHandler);
 app.listen(PORT, () => {
