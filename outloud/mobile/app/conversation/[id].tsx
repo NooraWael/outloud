@@ -9,13 +9,14 @@ import {
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
   useAudioRecorder,
+  useAudioPlayer,
 } from 'expo-audio';
 
 import Button from '@/components/ui/Button';
 import { colors, typography } from '@/styles/neumorphic';
 import SpeechBubble from '@/components/conversation/SpeechBubble';
 import ScoreCard from '@/components/ui/ScoreCard';
-import Heatmap from '@/components/ui//HeatMap';
+import Heatmap from '@/components/ui/HeatMap';
 
 import { api } from '@/services/core';
 import { ConversationDetailResponse, Message } from '@/services/types';
@@ -24,12 +25,16 @@ export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const player = useAudioPlayer();
 
   const [loading, setLoading] = useState(true);
   const [conversation, setConversation] = useState<ConversationDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [currentlyPlayingUrl, setCurrentlyPlayingUrl] = useState<string | null>(null);
+
+  const [isEvaluating, setIsEvaluating] = useState(false);
 
   // Load conversation data
   useEffect(() => {
@@ -68,6 +73,51 @@ export default function ConversationScreen() {
     }
 
     return true;
+  }
+
+  async function playAIAudio(audioUrl: string) {
+    try {
+      // Set audio mode for playback
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+      });
+
+      // Replace the source and play
+      player.replace(audioUrl);
+      player.play();
+      setCurrentlyPlayingUrl(audioUrl);
+    } catch (err) {
+      console.error('Failed to play AI audio:', err);
+    }
+  }
+
+  async function evaluateConversation() {
+    if (!id) return;
+
+    try {
+      setIsEvaluating(true);
+      const { evaluation } = await api.evaluations.evaluate(id);
+
+      // Update conversation with evaluation
+      setConversation((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          conversation: {
+            ...prev.conversation,
+            status: 'evaluated',
+          },
+          latestEvaluation: evaluation,
+        };
+      });
+    } catch (err: any) {
+      console.error('Failed to evaluate:', err);
+      Alert.alert('Evaluation failed', err.message || 'Unable to evaluate your conversation.');
+    } finally {
+      setIsEvaluating(false);
+    }
   }
 
   async function handleRecordPress() {
@@ -113,6 +163,7 @@ export default function ConversationScreen() {
       
       const response = await api.messages.sendVoiceMessage(id, uri);
 
+      // Update conversation state with new messages
       setConversation((prev) => {
         if (!prev) return prev;
         return {
@@ -124,6 +175,20 @@ export default function ConversationScreen() {
           messages: [...prev.messages, response.userMessage, response.aiMessage],
         };
       });
+
+      // Play AI audio response if available
+      if (response.aiMessage.audio_url) {
+        await playAIAudio(response.aiMessage.audio_url);
+      }
+
+      // If we've reached 3 turns, auto-evaluate
+      if (response.turn_count >= 3) {
+        // Wait a moment for audio to finish playing (or just start eval)
+        setTimeout(() => {
+          evaluateConversation();
+        }, 1000);
+      }
+
     } catch (err: any) {
       console.error('Failed to send voice message', err);
       Alert.alert('Send failed', err.message || 'Unable to send your voice message right now.');
@@ -133,13 +198,17 @@ export default function ConversationScreen() {
     }
   }
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (isRecording) {
         recorder.stop().catch(() => undefined);
       }
+      if (player.playing) {
+        player.pause();
+      }
     };
-  }, [isRecording, recorder]);
+  }, [isRecording, recorder, player]);
 
   // Loading state
   if (loading) {
@@ -168,6 +237,7 @@ export default function ConversationScreen() {
 
   const { conversation: conv, messages, latestEvaluation } = conversation;
   const isEvaluated = conv.status === 'evaluated';
+  
   const primaryActionLabel = isSending
     ? 'Sending voice response...'
     : isRecording
@@ -196,6 +266,17 @@ export default function ConversationScreen() {
           </Text>
         </View>
 
+        {/* Evaluating state */}
+        {isEvaluating && (
+          <View style={styles.evaluatingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.evaluatingText}>Evaluating your explanation...</Text>
+            <Text style={styles.evaluatingHint}>
+              Analyzing coverage, clarity, correctness, and causality
+            </Text>
+          </View>
+        )}
+
         {/* Show evaluation if exists */}
         {isEvaluated && latestEvaluation ? (
           <View style={styles.evaluationSection}>
@@ -221,24 +302,33 @@ export default function ConversationScreen() {
           </View>
         ) : (
           /* Active conversation UI */
-          <View style={styles.activeSection}>
-            <View style={styles.bubbleSection}>
-              <SpeechBubble />
-              <Text style={styles.bubbleHint}>
-                Listening pulse • tap when you want to speak
-              </Text>
-            </View>
-
-            {/* Messages */}
-            {messages.length > 0 && (
-              <View style={styles.messagesSection}>
-                <Text style={styles.messagesTitle}>Conversation History</Text>
-                {messages.map((msg) => (
-                  <MessageBubble key={msg.id} message={msg} />
-                ))}
+          !isEvaluating && (
+            <View style={styles.activeSection}>
+              <View style={styles.bubbleSection}>
+                <SpeechBubble />
+                <Text style={styles.bubbleHint}>
+                  {player.playing
+                    ? '🔊 AI is speaking...'
+                    : 'Listening pulse • tap when you want to speak'}
+                </Text>
               </View>
-            )}
-          </View>
+
+              {/* Messages */}
+              {messages.length > 0 && (
+                <View style={styles.messagesSection}>
+                  <Text style={styles.messagesTitle}>Conversation History</Text>
+                  {messages.map((msg) => (
+                    <MessageBubble
+                      key={msg.id}
+                      message={msg}
+                      onPlayAudio={msg.sender === 'ai' && msg.audio_url ? () => playAIAudio(msg.audio_url!) : undefined}
+                      isPlaying={player.playing && currentlyPlayingUrl === msg.audio_url}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          )
         )}
 
         {/* Actions */}
@@ -248,13 +338,13 @@ export default function ConversationScreen() {
               <Button
                 title={primaryActionLabel}
                 onPress={handleRecordPress}
-                disabled={isSending}
+                disabled={isSending || isEvaluating}
               />
               <Button title="End session" variant="ghost" onPress={handleEndSession} />
             </>
-          ) : (
+          ) : isEvaluated ? (
             <Button title="Back to Topics" onPress={handleEndSession} />
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -262,7 +352,15 @@ export default function ConversationScreen() {
 }
 
 // Message bubble component
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({
+  message,
+  onPlayAudio,
+  isPlaying,
+}: {
+  message: Message;
+  onPlayAudio?: () => void;
+  isPlaying?: boolean;
+}) {
   const isUser = message.sender === 'user';
   
   return (
@@ -272,9 +370,19 @@ function MessageBubble({ message }: { message: Message }) {
         isUser ? styles.userBubble : styles.aiBubble,
       ]}
     >
-      <Text style={styles.messageSender}>
-        {isUser ? 'You' : 'AI'}
-      </Text>
+      <View style={styles.messageHeader}>
+        <Text style={styles.messageSender}>
+          {isUser ? 'You' : 'AI'}
+        </Text>
+        {onPlayAudio && (
+          <Ionicons
+            name={isPlaying ? 'volume-high' : 'play-circle-outline'}
+            size={20}
+            color={colors.primary}
+            onPress={onPlayAudio}
+          />
+        )}
+      </View>
       <Text style={styles.messageText}>{message.text}</Text>
     </View>
   );
@@ -327,6 +435,20 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
   },
+  evaluatingContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    gap: 12,
+  },
+  evaluatingText: {
+    ...typography.h3,
+    fontSize: 18,
+  },
+  evaluatingHint: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
   activeSection: {
     gap: 32,
   },
@@ -338,6 +460,7 @@ const styles = StyleSheet.create({
   bubbleHint: {
     ...typography.caption,
     color: colors.textSecondary,
+    textAlign: 'center',
   },
   messagesSection: {
     gap: 12,
@@ -349,7 +472,12 @@ const styles = StyleSheet.create({
   messageBubble: {
     padding: 16,
     borderRadius: 12,
-    gap: 4,
+    gap: 8,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   userBubble: {
     backgroundColor: 'rgba(78, 205, 196, 0.1)',
