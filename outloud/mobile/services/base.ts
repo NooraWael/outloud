@@ -4,7 +4,7 @@ import { APIError } from './types';
 import { router } from 'expo-router';
 
 const API_BASE_URL = __DEV__
-  ? 'http://localhost:3000' // Development
+  ? 'http://10.10.4.13:3000' // Development
   : 'https://tbd.com'; // Production
 
 export class BaseAPI {

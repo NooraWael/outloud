@@ -55,30 +55,9 @@ function RootLayoutNav() {
         }}
       >
         <Stack.Screen name="index" />
-        
-        <Stack.Screen 
-          name="(auth)" 
-          options={{ headerShown: false }} 
-        />
-        
-        <Stack.Screen 
-          name="(tabs)" 
-          options={{ headerShown: false }} 
-        />
-        
-        {/* Conversation screen (modal-style for demo) */}
-        <Stack.Screen 
-          name="conversation/[id]"
-          options={{ 
-            presentation: 'card',
-            headerShown: true,
-            headerTitle: 'Conversation',
-            headerStyle: {
-              backgroundColor: '#e0e5ec',
-            },
-            headerShadowVisible: false,
-          }} 
-        />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="conversation" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="light" backgroundColor={colors.backgroundSecondary} />
     </QueryClientProvider>

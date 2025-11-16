@@ -13,13 +13,15 @@ interface ButtonProps {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'ghost';
   style?: ViewStyle;
+  disabled?: boolean;
 }
 
 export default function Button({ 
   title, 
   onPress, 
   variant = 'primary', 
-  style 
+  style,
+  disabled = false,
 }: ButtonProps) {
   const scale = useSharedValue(1);
 
@@ -28,16 +30,19 @@ export default function Button({
   }));
 
   const handlePressIn = () => {
+    if (disabled) return;
     scale.value = withSpring(0.96);
   };
 
   const handlePressOut = () => {
+    if (disabled) return;
     scale.value = withSpring(1);
   };
 
   return (
     <AnimatedPressable
-      onPress={onPress}
+      disabled={disabled}
+      onPress={disabled ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[
@@ -46,6 +51,7 @@ export default function Button({
         variant === 'primary' && styles.primary,
         variant === 'secondary' && styles.secondary,
         variant === 'ghost' && styles.ghost,
+        disabled && styles.disabled,
         style,
       ]}
     >
@@ -94,5 +100,8 @@ const styles = StyleSheet.create({
   },
   ghostText: {
     color: colors.textSecondary,
+  },
+  disabled: {
+    opacity: 0.6,
   },
 });

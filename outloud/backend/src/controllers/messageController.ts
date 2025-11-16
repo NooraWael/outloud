@@ -6,7 +6,7 @@ import { generateAIReply, generateTTS } from '../services/openaiService';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 
-const STT_SERVICE_URL = process.env.STT_SERVICE_URL || 'http://localhost:8000';
+const STT_SERVICE_URL = process.env.STT_SERVICE_URL || 'http://10.10.4.13:8000';
 
 // POST /conversations/:id/voice-message
 export const sendVoiceMessage = async (
