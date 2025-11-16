@@ -2,6 +2,24 @@ import { supabase } from '../../services/supabase';
 
 // Clean up test data after each test
 export const cleanupTestData = async () => {
+  // Delete evaluations first (foreign key constraint)
+  await supabase
+    .from('evaluations')
+    .delete()
+    .like('conversation_id', '%');
+
+  // Delete messages
+  await supabase
+    .from('messages')
+    .delete()
+    .like('conversation_id', '%');
+
+  // Delete conversations
+  await supabase
+    .from('conversations')
+    .delete()
+    .or('user_id.is.null,user_id.like.test_%');
+
   // Delete test users (keep demo topics)
   await supabase
     .from('users')

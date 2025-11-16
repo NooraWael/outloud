@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
+import demoRoutes from './routes/demoRoutes';
+import conversationRoutes from './routes/conversationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -20,7 +22,8 @@ app.get('/health', (req, res) => {
 
 // Routes will go here -later
 app.use('/auth', authRoutes);
-// app.use('/conversations', conversationRoutes);
+app.use('/demo', demoRoutes); 
+app.use('/conversations', conversationRoutes);
 
 app.use(errorHandler);
 app.listen(PORT, () => {
